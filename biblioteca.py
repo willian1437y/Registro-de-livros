@@ -1,12 +1,9 @@
 import csv
 import os
 from datetime import datetime, timedelta
-#to do
-"""
-- entrega de livro
 
-"""
-
+ARQ_LIVROS = "livros.csv"
+ARQ_REGISTROS = "registros.csv"
 
 def registroLivro():
     print("\n---INFORMAÇÕES DO LIVRO---")
@@ -15,80 +12,123 @@ def registroLivro():
     codLivro = input("Código do livro: ")
     data = datetime.today().strftime("%d/%m/%Y %H:%M:%S")
 
-    with open("livros.csv", mode="a", newline="", encoding="utf-8") as arquivo:
+    file_exists = os.path.exists(ARQ_LIVROS)
+    with open(ARQ_LIVROS, mode="a", newline="", encoding="utf-8") as arquivo:
         escritor = csv.writer(arquivo)
-
-        if arquivo.tell() == 0:
+        if not file_exists or os.stat(ARQ_LIVROS).st_size == 0:
             escritor.writerow(["livro", "autor", "Código do Livro", "Data de Registro"])
         escritor.writerow([livro, autor, codLivro, data])
 
     print("---REGISTRO CONCLUÍDO---")
 
-
 def apagarLivro():
-    arquivo = 'livros.csv'
-    if os.path.exists(arquivo):
-        with open(arquivo, mode='r', encoding="utf-8") as f:
-            linhas = f.readlines()
+    arquivo = ARQ_LIVROS
+    if not os.path.exists(arquivo):
+        print("Nenhum arquivo de livros encontrado.")
+        return
 
-            print("\n---LIVROS REGISTRADOS---")
-            print(f"{'Livro':<30} {'Autor':<30} {'Código do Livro':<20} {'Data de Registro':<20}")
-            print("-" * 100)
-            for linha in linhas[1:]:
-                dados = linha.strip().split(",")
-                print(f"{dados[0]:<30} {dados[1]:<30} {dados[2]:<20} {dados[3]:<20}")
+    with open(arquivo, mode='r', encoding="utf-8", newline="") as f:
+        leitor = list(csv.reader(f))
+    if len(leitor) <= 1:
+        print("Nenhum livro registrado.")
+        return
 
-            codigoExcluir = input("\nDigite o código do livro que deseja apagar: ").strip()
+    print("\n---LIVROS REGISTRADOS---")
+    print(f"{'Livro':<30} {'Autor':<30} {'Código do Livro':<20} {'Data de Registro':<20}")
+    print("-" * 100)
+    for linha in leitor[1:]:
+        while len(linha) < 4:
+            linha.append("")
+        print(f"{linha[0]:<30} {linha[1]:<30} {linha[2]:<20} {linha[3]:<20}")
 
-            novas_linhas = [linhas[0]]
-            for linha in linhas[1:]:
-                dados = linha.strip().split(",")
-                if dados[2] != codigoExcluir:
-                    novas_linhas.append(linha)
+    codigoExcluir = input("\nDigite o código do livro que deseja apagar: ").strip()
 
-            if len(novas_linhas) > 1:
-                with open(arquivo, mode='w', encoding="utf-8") as f:
-                    f.writelines(novas_linhas)
-                print("---REGISTRO APAGADO COM SUCESSO---")
-            else:
-                print("Código não encontrado ou livro já foi apagado.")
+    novas_linhas = [leitor[0]]
+    encontrado = False
+    for linha in leitor[1:]:
+        while len(linha) < 4:
+            linha.append("")
+        if linha[2] != codigoExcluir:
+            novas_linhas.append(linha)
+        else:
+            encontrado = True
 
+    if not encontrado:
+        print("Código não encontrado ou livro já foi apagado.")
+        return
+
+    with open(arquivo, mode='w', encoding="utf-8", newline="") as f:
+        escritor = csv.writer(f)
+        escritor.writerows(novas_linhas)
+
+    print("---REGISTRO APAGADO COM SUCESSO---")
 
 def editarLivro():
-    arquivo = 'livros.csv'
-    if os.path.exists(arquivo):
-        with open(arquivo, mode='r', encoding="utf-8") as f:
-            linhas = f.readlines()
+    arquivo = ARQ_LIVROS
+    if not os.path.exists(arquivo):
+        print("Nenhum arquivo de livros encontrado.")
+        return
 
-            print("\n---LIVROS REGISTRADOS---")
-            print(f"{'Livro':<30} {'Autor':<30} {'Código do Livro':<20} {'Data de Registro':<20}")
-            print("-" * 100)
-            for linha in linhas[1:]:
-                dados = linha.strip().split(",")
-                print(f"{dados[0]:<30} {dados[1]:<30} {dados[2]:<20} {dados[3]:<20}")
+    with open(arquivo, mode='r', encoding="utf-8", newline="") as f:
+        leitor = list(csv.reader(f))
+    if len(leitor) <= 1:
+        print("Nenhum livro registrado.")
+        return
 
-            codigoEditar = input("\nDigite o código do livro que deseja editar: ").strip()
-            novas_linhas = []
-            encontrado = False
+    print("\n---LIVROS REGISTRADOS---")
+    print(f"{'Livro':<30} {'Autor':<30} {'Código do Livro':<20} {'Data de Registro':<20}")
+    print("-" * 100)
+    for linha in leitor[1:]:
+        while len(linha) < 4:
+            linha.append("")
+        print(f"{linha[0]:<30} {linha[1]:<30} {linha[2]:<20} {linha[3]:<20}")
 
-            for linha in linhas:
-                aux = linha.strip().split(",")
-                if aux[2] == codigoEditar:
-                    encontrado = True
-                    print("\n---EDITANDO REGISTRO---")
-                    novo_nome = input(f"Novo nome do livro ({aux[0]}): ") or aux[0]
-                    novo_autor = input(f"Novo autor ({aux[1]}): ") or aux[1]
-                    nova_data = datetime.today().strftime("%d/%m/%Y %H:%M:%S")
-                    novas_linhas.append(f"{novo_nome},{novo_autor},{codigoEditar},{nova_data}\n")
-                else:
-                    novas_linhas.append(linha)
+    codigoEditar = input("\nDigite o código do livro que deseja editar: ").strip()
+    novas_linhas = []
+    encontrado = False
 
-            if not encontrado:
-                print("Código não encontrado.")
-            else:
-                with open(arquivo, mode='w', encoding="utf-8") as f:
-                    f.writelines(novas_linhas)
-                print("---REGISTRO EDITADO COM SUCESSO---")
+    for linha in leitor:
+        while len(linha) < 4:
+            linha.append("")
+        if linha[2] == codigoEditar:
+            encontrado = True
+            print("\n---EDITANDO REGISTRO---")
+            novo_nome = input(f"Novo nome do livro ({linha[0]}): ") or linha[0]
+            novo_autor = input(f"Novo autor ({linha[1]}): ") or linha[1]
+            nova_data = datetime.today().strftime("%d/%m/%Y %H:%M:%S")
+            novas_linhas.append([novo_nome, novo_autor, codigoEditar, nova_data])
+        else:
+            novas_linhas.append(linha)
+
+    if not encontrado:
+        print("Código não encontrado.")
+        return
+
+    with open(arquivo, mode='w', encoding="utf-8", newline="") as f:
+        escritor = csv.writer(f)
+        escritor.writerows(novas_linhas)
+
+    print("---REGISTRO EDITADO COM SUCESSO---")
+
+def exibirLivros():
+    arquivo = ARQ_LIVROS
+    if not os.path.exists(arquivo):
+        print("\nNenhum arquivo de livros encontrado.")
+        return
+
+    with open(arquivo, mode='r', encoding="utf-8", newline="") as f:
+        leitor = list(csv.reader(f))
+    if len(leitor) <= 1:
+        print("\nNenhum livro cadastrado.")
+        return
+
+    print("\n---LIVROS DISPONÍVEIS---\n")
+    print(f"{'Livro':<30} {'Autor':<30} {'Código do Livro':<20} {'Data de Registro':<20}")
+    print("-" * 100)
+    for linha in leitor[1:]:
+        while len(linha) < 4:
+            linha.append("")
+        print(f"{linha[0]:<30} {linha[1]:<30} {linha[2]:<20} {linha[3]:<20}")
 
 
 def emprestarLivro():
@@ -102,111 +142,204 @@ def emprestarLivro():
     codLivro = input("Código do livro: ")
     data_emprestimo = datetime.today().strftime("%d/%m/%Y %H:%M:%S")
 
+    # valida se o livro existe
     livro_existe = False
-    with open("livros.csv", mode="r", encoding="utf-8") as f:
-        linhas = f.readlines()
-        for linha in linhas[1:]:
-            dados = linha.strip().split(",")
-            if dados[2] == codLivro:
-                livro_existe = True
-                break
+    if os.path.exists(ARQ_LIVROS):
+        with open(ARQ_LIVROS, mode="r", encoding="utf-8", newline="") as f:
+            leitor = list(csv.reader(f))
+            for linha in leitor[1:]:
+                while len(linha) < 4:
+                    linha.append("")
+                if linha[2] == codLivro:
+                    livro_existe = True
+                    break
 
     if not livro_existe:
         print("Código do livro não encontrado.")
         return
 
-    if not os.path.exists("registros.csv"):
-        with open("registros.csv", mode="w", newline="", encoding="utf-8") as arquivo:
+    file_exists = os.path.exists(ARQ_REGISTROS)
+    if not file_exists or os.stat(ARQ_REGISTROS).st_size == 0:
+        with open(ARQ_REGISTROS, mode="w", newline="", encoding="utf-8") as arquivo:
             escritor = csv.writer(arquivo)
-            escritor.writerow(["Nome", "CPF", "Celular", "Código do Livro", "Data de Empréstimo"])
+            escritor.writerow(["Nome", "CPF", "Celular", "Código do Livro", "Data de Empréstimo", "Entregue", "Data de Entrega"])
 
-    with open("registros.csv", mode="a", newline="", encoding="utf-8") as arquivo:
+    with open(ARQ_REGISTROS, mode="a", newline="", encoding="utf-8") as arquivo:
         escritor = csv.writer(arquivo)
-        escritor.writerow([nome, cpf, celular, codLivro, data_emprestimo])
+        escritor.writerow([nome, cpf, celular, codLivro, data_emprestimo, "nao", ""])
 
     print("---EMPRÉSTIMO REGISTRADO COM SUCESSO---")
 
-
 def excluiEmprestimo():
+    arquivo = ARQ_REGISTROS
+    if not os.path.exists(arquivo):
+        print("Nenhum registro de empréstimo encontrado.")
+        return
 
     exibirEmprestimos()
 
-    codLivro = input("Código do livro: ")
-    nome = input("Nome completo: ")
+    codLivro = input("Código do livro: ").strip()
+    nome = input("Nome completo: ").strip()
 
-    livro_emprestado = False
-    with open("registros.csv", mode="r", encoding="utf-8") as f:
-        linhas = f.readlines()
-        for linha in linhas[1:]:
-            dados = linha.strip().split(",")
-            if dados[3] == codLivro and dados[0] == nome:
-                livro_emprestado = True
-                break
+    with open(arquivo, mode='r', encoding="utf-8", newline="") as f:
+        leitor = list(csv.reader(f))
 
-    if not livro_emprestado:
-        print("O livro não foi emprestado ou o nome não corresponde.")
+    if len(leitor) <= 1:
+        print("Nenhum empréstimo para excluir.")
         return
 
-    novas_linhas = []
-    with open("registros.csv", mode="r", encoding="utf-8") as f:
-        linhas = f.readlines()
-        for linha in linhas:
-            if not (linha.strip().split(",")[3] == codLivro and linha.strip().split(",")[0] == nome):
-                novas_linhas.append(linha)
+    header = leitor[0]
+    novas = [header]
+    removido = False
 
-    with open("registros.csv", mode="w", encoding="utf-8") as f:
-        f.writelines(novas_linhas)
+    for linha in leitor[1:]:
+        while len(linha) < 7:
+            linha.append("")
+        row_nome = linha[0].strip()
+        row_cod = linha[3].strip() if len(linha) > 3 else ""
+        if not (row_cod == codLivro and row_nome.lower() == nome.lower()):
+            novas.append(linha)
+        else:
+            removido = True
 
-    print("---LIVRO EXCLUÍDO COM SUCESSO---")
+    if not removido:
+        print("Registro não encontrado (verifique nome e código).")
+        return
 
+    with open(arquivo, mode='w', encoding="utf-8", newline="") as f:
+        escritor = csv.writer(f)
+        escritor.writerows(novas)
 
-def exibirLivros():
-    arquivo = 'livros.csv'
-    if os.path.exists(arquivo):
-        with open(arquivo, mode='r', encoding="utf-8") as f:
-            linhas = f.readlines()
-
-            print("\n---LIVROS DISPONÍVEIS---\n")
-            print(f"{'Livro':<30} {'Autor':<30} {'Código do Livro':<20} {'Data de Registro':<20}")
-            print("-" * 100)
-            for linha in linhas[1:]:
-                dados = linha.strip().split(",")
-                print(f"{dados[0]:<30} {dados[1]:<30} {dados[2]:<20} {dados[3]:<20}")
-
+    print("---EMPRÉSTIMO EXCLUÍDO COM SUCESSO---")
 
 def exibirEmprestimos():
-    arquivo = 'registros.csv'
-    if os.path.exists(arquivo):
-        with open(arquivo, mode='r', encoding="utf-8") as f:
-            linhas = f.readlines()
+    arquivo = ARQ_REGISTROS
+    if not os.path.exists(arquivo):
+        print("\nNenhum empréstimo registrado.")
+        return
 
-            print("\n---EMPRÉSTIMOS REGISTRADOS---")
-            print(f"{'Nome':<40} {'CPF':<15} {'Celular':<15} {'Código do Livro':<20} {'Data de Empréstimo':<20} {'Data de Vencimento':<20}")
-            print("-" * 140)
-            for linha in linhas[1:]:
-                dados = linha.strip().split(",")
-                data_emprestimo = datetime.strptime(dados[4], "%d/%m/%Y %H:%M:%S")
-                data_vencimento = data_emprestimo + timedelta(days=7)  #vencimento em 7 dias
-                print(f"{dados[0]:<40} {dados[1]:<15} {dados[2]:<15} {dados[3]:<20} {dados[4]:<20} {data_vencimento.strftime('%d/%m/%Y %H:%M:%S'):<20}")
+    with open(arquivo, mode='r', encoding="utf-8", newline="") as f:
+        leitor = list(csv.reader(f))
 
+    if len(leitor) <= 1:
+        print("\nNenhum empréstimo registrado.")
+        return
+
+    print("\n---EMPRÉSTIMOS REGISTRADOS---")
+    print(f"{'Nome':<30} {'CPF':<15} {'Celular':<15} {'Código do Livro':<15} {'Data Empr.':<20} {'Entregue':<8} {'Data Entrega':<20} {'Status':<20}")
+    print("-" * 150)
+
+    agora = datetime.today()
+    for linha in leitor[1:]:
+
+        while len(linha) < 7:
+            linha.append("")
+
+        nome, cpf, celular, codigo, data_emp_str, entregue, data_ent_str = linha
+
+        entregue_txt = "Sim" if entregue.lower() == "sim" else "Não"
+
+
+        try:
+            data_emp = datetime.strptime(data_emp_str, "%d/%m/%Y %H:%M:%S")
+        except Exception:
+
+            try:
+                data_emp = datetime.strptime(data_emp_str, "%d/%m/%Y")
+            except Exception:
+                data_emp = None
+
+        data_ent = None
+        if data_ent_str and data_ent_str.strip():
+            try:
+                data_ent = datetime.strptime(data_ent_str, "%d/%m/%Y %H:%M:%S")
+            except Exception:
+                try:
+                    data_ent = datetime.strptime(data_ent_str, "%d/%m/%Y")
+                except Exception:
+                    data_ent = None
+
+        # calcular vencimento (7 dias após empréstimo) se tivermos data de empréstimo válida
+        if data_emp:
+            vencimento = data_emp + timedelta(days=7)
+        else:
+            vencimento = None
+
+
+        if entregue.lower() == "sim":
+            if data_ent and vencimento:
+                if data_ent > vencimento:
+                    status = "PASSOU DO PRAZO"
+                else:
+                    status = "ENTREGUE DENTRO DO PRAZO"
+            else:
+                status = "ENTREGUE (data inválida)"
+        else:
+
+            if vencimento:
+                if agora > vencimento:
+                    status = "ATRASADO"
+                else:
+                    status = "PENDENTE"
+            else:
+                status = "PENDENTE (data inválida)"
+
+        data_emp_display = data_emp_str if data_emp_str else "-"
+        data_ent_display = data_ent_str if data_ent_str else "-"
+
+        print(f"{nome:<30} {cpf:<15} {celular:<15} {codigo:<15} {data_emp_display:<20} {entregue_txt:<8} {data_ent_display:<20} {status:<20}")
 
 def entregaLivros():
-    arquivo = 'registros.csv'
-    if os.path.exists(arquivo):
-        with open(arquivo, mode='r', encoding="utf-8") as f:
-            linhas = f.readlines()
+    arquivo = ARQ_REGISTROS
+    if not os.path.exists(arquivo):
+        print("Nenhum registro de empréstimo encontrado.")
+        return
 
-            print("\n---EMPRÉSTIMOS REGISTRADOS---")
-            print(
-                f"{'Nome':<40} {'CPF':<15} {'Celular':<15} {'Código do Livro':<20} {'Data de Empréstimo':<20} {'Data de Vencimento':<20}")
-            print("-" * 140)
-            for linha in linhas[1:]:
-                dados = linha.strip().split(",")
-                data_emprestimo = datetime.strptime(dados[4], "%d/%m/%Y %H:%M:%S")
-                data_vencimento = data_emprestimo + timedelta(days=7)
-                print(
-                    f"{dados[0]:<40} {dados[1]:<15} {dados[2]:<15} {dados[3]:<20} {dados[4]:<20} {data_vencimento.strftime('%d/%m/%Y %H:%M:%S'):<20}")
+    with open(arquivo, mode='r', encoding="utf-8", newline="") as f:
+        leitor = list(csv.reader(f))
 
+    if len(leitor) <= 1:
+        print("Nenhum empréstimo registrado.")
+        return
+
+    print("\n---EMPRÉSTIMOS ABERTOS---")
+    abertos = []
+    for linha in leitor[1:]:
+        while len(linha) < 7:
+            linha.append("")
+        if linha[5].lower() != "sim":
+            abertos.append(linha)
+
+    if not abertos:
+        print("Não há empréstimos em aberto.")
+        return
+
+    for l in abertos:
+        print(f"Nome: {l[0]} | Código: {l[3]} | Data Empr.: {l[4]}")
+
+    codLivro = input("\nCódigo do livro entregue: ").strip()
+    nome = input("Nome completo (do tomador): ").strip()
+    data_entrega = datetime.today().strftime("%d/%m/%Y %H:%M:%S")
+
+    encontrado = False
+    for linha in leitor[1:]:
+        while len(linha) < 7:
+            linha.append("")
+        if linha[3] == codLivro and linha[0].strip().lower() == nome.strip().lower() and linha[5].lower() != "sim":
+            linha[5] = "sim"
+            linha[6] = data_entrega
+            encontrado = True
+            break
+
+    if not encontrado:
+        print("Registro não encontrado ou já entregue.")
+        return
+
+    with open(arquivo, mode='w', encoding="utf-8", newline="") as f:
+        escritor = csv.writer(f)
+        escritor.writerows(leitor)
+
+    print("---LIVRO ENTREGUE E REGISTRO ATUALIZADO---")
 
 
 def mostrarMenu():
@@ -235,4 +368,5 @@ def mostrarMenu():
             print("Opção inválida!")
 
 
-mostrarMenu()
+if __name__ == "__main__":
+    mostrarMenu()
