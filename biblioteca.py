@@ -5,6 +5,27 @@ from datetime import datetime, timedelta
 ARQ_LIVROS = "livros.csv"
 ARQ_REGISTROS = "registros.csv"
 
+def carregarLivrosEmprestados():
+    """Retorna um conjunto com os códigos de livros que estão atualmente emprestados."""
+    emprestados = set()
+
+    if os.path.exists(ARQ_REGISTROS):
+        with open(ARQ_REGISTROS, mode='r', encoding="utf-8", newline="") as f:
+            leitor = list(csv.reader(f))
+
+        for linha in leitor[1:]:
+            while len(linha) < 7:
+                linha.append("")
+
+            cod = linha[3].strip()
+            entregue = linha[5].strip().lower()
+
+            if entregue == "nao":
+                emprestados.add(cod)
+
+    return emprestados
+
+
 def registroLivro():
     print("\n---INFORMAÇÕES DO LIVRO---")
     livro = input("Nome do livro: ")
@@ -20,6 +41,7 @@ def registroLivro():
         escritor.writerow([livro, autor, codLivro, data])
 
     print("---REGISTRO CONCLUÍDO---")
+
 
 def apagarLivro():
     arquivo = ARQ_LIVROS
@@ -62,6 +84,7 @@ def apagarLivro():
         escritor.writerows(novas_linhas)
 
     print("---REGISTRO APAGADO COM SUCESSO---")
+
 
 def editarLivro():
     arquivo = ARQ_LIVROS
@@ -110,11 +133,14 @@ def editarLivro():
 
     print("---REGISTRO EDITADO COM SUCESSO---")
 
+
 def exibirLivros():
     arquivo = ARQ_LIVROS
     if not os.path.exists(arquivo):
         print("\nNenhum arquivo de livros encontrado.")
         return
+
+    emprestados = carregarLivrosEmprestados()
 
     with open(arquivo, mode='r', encoding="utf-8", newline="") as f:
         leitor = list(csv.reader(f))
@@ -125,10 +151,12 @@ def exibirLivros():
     print("\n---LIVROS DISPONÍVEIS---\n")
     print(f"{'Livro':<30} {'Autor':<30} {'Código do Livro':<20} {'Data de Registro':<20}")
     print("-" * 100)
+
     for linha in leitor[1:]:
         while len(linha) < 4:
             linha.append("")
-        print(f"{linha[0]:<30} {linha[1]:<30} {linha[2]:<20} {linha[3]:<20}")
+        if linha[2] not in emprestados:
+            print(f"{linha[0]:<30} {linha[1]:<30} {linha[2]:<20} {linha[3]:<20}")
 
 
 def emprestarLivro():
@@ -141,6 +169,11 @@ def emprestarLivro():
     celular = input("Celular para contato: ")
     codLivro = input("Código do livro: ")
     data_emprestimo = datetime.today().strftime("%d/%m/%Y %H:%M:%S")
+
+    emprestados = carregarLivrosEmprestados()
+    if codLivro in emprestados:
+        print("Esse livro está emprestado no momento.")
+        return
 
     # valida se o livro existe
     livro_existe = False
@@ -169,6 +202,7 @@ def emprestarLivro():
         escritor.writerow([nome, cpf, celular, codLivro, data_emprestimo, "nao", ""])
 
     print("---EMPRÉSTIMO REGISTRADO COM SUCESSO---")
+
 
 def excluiEmprestimo():
     arquivo = ARQ_REGISTROS
@@ -212,6 +246,7 @@ def excluiEmprestimo():
 
     print("---EMPRÉSTIMO EXCLUÍDO COM SUCESSO---")
 
+
 def exibirEmprestimos():
     arquivo = ARQ_REGISTROS
     if not os.path.exists(arquivo):
@@ -239,32 +274,28 @@ def exibirEmprestimos():
 
         entregue_txt = "Sim" if entregue.lower() == "sim" else "Não"
 
-
         try:
             data_emp = datetime.strptime(data_emp_str, "%d/%m/%Y %H:%M:%S")
-        except Exception:
-
+        except:
             try:
                 data_emp = datetime.strptime(data_emp_str, "%d/%m/%Y")
-            except Exception:
+            except:
                 data_emp = None
 
         data_ent = None
         if data_ent_str and data_ent_str.strip():
             try:
                 data_ent = datetime.strptime(data_ent_str, "%d/%m/%Y %H:%M:%S")
-            except Exception:
+            except:
                 try:
                     data_ent = datetime.strptime(data_ent_str, "%d/%m/%Y")
-                except Exception:
+                except:
                     data_ent = None
 
-        # calcular vencimento (7 dias após empréstimo) se tivermos data de empréstimo válida
         if data_emp:
             vencimento = data_emp + timedelta(days=7)
         else:
             vencimento = None
-
 
         if entregue.lower() == "sim":
             if data_ent and vencimento:
@@ -275,7 +306,6 @@ def exibirEmprestimos():
             else:
                 status = "ENTREGUE (data inválida)"
         else:
-
             if vencimento:
                 if agora > vencimento:
                     status = "ATRASADO"
@@ -288,6 +318,7 @@ def exibirEmprestimos():
         data_ent_display = data_ent_str if data_ent_str else "-"
 
         print(f"{nome:<30} {cpf:<15} {celular:<15} {codigo:<15} {data_emp_display:<20} {entregue_txt:<8} {data_ent_display:<20} {status:<20}")
+
 
 def entregaLivros():
     arquivo = ARQ_REGISTROS
