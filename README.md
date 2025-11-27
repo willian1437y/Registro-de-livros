@@ -2,6 +2,6 @@
 
 🙋‍♂️ Registra empréstimos
 
-⏰ Calcula o prazo de devolução (7 dias… da para mudar, mas não sei se vai funcionar depois)
+⏰ Calcula o prazo de devolução (7 dias… da para mudar)
 
-📄 Tudo salvo em CSV, se pa que ele cria sozinho um arquivo caso não tenha, mas não sei não, sim ele cria
+📄 Tudo salvo em CSV, caso não tenho nenhum arquivo csv, ele cria
